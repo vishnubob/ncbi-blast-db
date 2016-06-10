@@ -100,12 +100,12 @@ class NCBI_BlastMirror(object):
         config.add_section("BLAST_MirrorConfig")
         config.set("BLAST_MirrorConfig", "blastdb_dir", self.blastdb_dir)
         config.set("BLAST_MirrorConfig", "archive_dir", self.archive_dir)
-        config.set("BLAST_MirrorConfig", "hashfile", hashfile)
+        config.set("BLAST_MirrorConfig", "hashfile", self.hashfile)
         config.set("BLAST_MirrorConfig", "include", ["*"])
         config.set("BLAST_MirrorConfig", "exclude", [])
         with open(self.config_path, 'wb') as configfile:
             config.write(configfile)
-        msg = "Initialized configuration file at %s" % configfile
+        msg = "Initialized configuration file at %s" % self.config_path
         print(msg)
 
     def load_local_hashmap(self):
@@ -219,7 +219,7 @@ def get_cli():
     defaults = {
         "blastdb_dir": os.environ.get("BLASTDB", None),
         "archive_dir": None,
-        "config_path": None,
+        "config_path": ".config.ini",
         "hashfile": None,
         "init": False,
     }
@@ -238,7 +238,8 @@ def load_config_path(config_path):
 if __name__ == "__main__":
     args = get_cli()
     ns = args.__dict__.copy()
-    if args.init:
+    init = ns.pop("init", False)
+    if init:
         mirror = NCBI_BlastMirror(**ns)
         mirror.initialize()
     else:
