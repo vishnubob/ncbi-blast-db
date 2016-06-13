@@ -67,7 +67,8 @@ class DownloadThread(threading.Thread):
         try:
             for work in self.inq:
                 retry = 5
-                while retry:
+                res = False
+                while retry and not res:
                     try:
                         res = self.download(*work)
                         break
@@ -77,6 +78,9 @@ class DownloadThread(threading.Thread):
                         retry -= 1
                 if res:
                     self.outq.enque(work)
+                else:
+                    msg = "Could not download %s successfully (check logs)" % work[0]
+                    logging.error(msg)
         finally:
             self.outq.enque(None)
 
