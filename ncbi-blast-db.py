@@ -72,11 +72,18 @@ class DownloadThread(threading.Thread):
             self.outq.enque(None)
 
     def download(self, target, filename_hash):
-        md5hash = md5.new()
+        # check to see if we already have the file we need
+        if os.path.exists(target):
+            md5hash = md5.new()
+            with open(target, 'rb') as fh:
+                md5hash.update(fh.read())
+            if md5hash.hexdigest() == filename_hash:
+                return True
         temp_filename = "%s_download" % target
         filename = os.path.split(target)[-1]
         msg = "Downloading %s" % filename
         logging.info(msg)
+        md5hash = md5.new()
         with open(temp_filename, 'w') as fh:
             def callback(block):
                 md5hash.update(block)
@@ -176,6 +183,8 @@ class NCBI_BlastMirror(object):
         self.download_que = ThreadQueue()
         self.finished_que = ThreadQueue()
         workers = []
+        msg = "Starting %d download worker(s)" % self.threads
+        logging.info(msg)
         for idx in range(self.threads):
             worker = DownloadThread(self.connect, self.download_que, self.finished_que)
             worker.start()
@@ -249,13 +258,14 @@ def get_cli():
     parser.add_argument("-a", "--archive_dir", help="path to archive directory")
     parser.add_argument("-H", "--hashfile", help="path to local hash file")
     parser.add_argument("-i", "--init", action="store_true", help="initialize BLAST database")
-    parser.add_argument("-t", "--threads", help="Number of download threads")
+    parser.add_argument("-t", "--threads", type=int, help="Number of download threads")
     defaults = {
         "blastdb_dir": os.environ.get("BLASTDB", None),
         "archive_dir": None,
         "config_path": ".config.ini",
         "hashfile": None,
         "init": False,
+        "threads": 1,
     }
     parser.set_defaults(**defaults)
     args = parser.parse_args()
@@ -277,6 +287,7 @@ if __name__ == "__main__":
         mirror = NCBI_BlastMirror(**ns)
         mirror.initialize()
     else:
-        ns = load_config_path(args.config_path)
+        conf = load_config_path(args.config_path)
+        ns.update(conf)
         mirror = NCBI_BlastMirror(**ns)
         mirror.sync()
