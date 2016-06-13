@@ -76,7 +76,11 @@ class DownloadThread(threading.Thread):
         if os.path.exists(target):
             md5hash = md5.new()
             with open(target, 'rb') as fh:
-                md5hash.update(fh.read())
+                while 1:
+                    buf = fh.read(1024)
+                    if not buf:
+                        break
+                    md5hash.update(buf)
             if md5hash.hexdigest() == filename_hash:
                 return True
         temp_filename = "%s_download" % target
