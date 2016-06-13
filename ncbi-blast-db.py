@@ -227,7 +227,7 @@ class NCBI_BlastMirror(object):
     
     def install(self, fn):
         fn = os.path.join(self.archive_dir, fn)
-        cmd = ["tar", "xzf", fn]
+        cmd = ["tar", "-xz", "--overwrite", "-f", fn]
         cmd = str.join(' ', cmd)
         msg = "Installing %s into %s" % (fn, self.blastdb_dir)
         logging.info(msg)
