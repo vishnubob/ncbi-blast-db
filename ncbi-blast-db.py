@@ -10,6 +10,7 @@ import threading
 import md5
 import logging
 import argparse
+import traceback
 import ConfigParser
 
 logger = logging.basicConfig(level=logging.DEBUG)
@@ -75,6 +76,7 @@ class DownloadThread(threading.Thread):
                     except KeyboardInterrupt:
                         return None
                     except:
+                        traceback.print_exc()
                         retry -= 1
                 if res:
                     self.outq.enque(work)
@@ -98,9 +100,9 @@ class DownloadThread(threading.Thread):
         return False
 
     def download(self, target, filename_hash):
-        connection = self.connectf()
         if self.is_cached(target, filename_hash):
             return True
+        connection = self.connectf()
         temp_filename = "%s_download" % target
         filename = os.path.split(target)[-1]
         msg = "Downloading %s" % filename
