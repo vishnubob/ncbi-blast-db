@@ -57,7 +57,7 @@ class ThreadQueue(object):
 
 class DownloadThread(threading.Thread):
     def __init__(self, connectf, inq, outq):
-        self.connection = connectf()
+        self.connectf = connectf()
         self.inq = inq
         self.outq = outq
         super(DownloadThread, self).__init__()
@@ -66,13 +66,21 @@ class DownloadThread(threading.Thread):
     def run(self):
         try:
             for work in self.inq:
-                if self.download(*work):
+                retry = 5
+                while retry:
+                    try:
+                        res = self.download(*work)
+                        break
+                    except KeyboardInterrupt:
+                        return None
+                    except:
+                        retry -= 1
+                if res:
                     self.outq.enque(work)
         finally:
             self.outq.enque(None)
 
-    def download(self, target, filename_hash):
-        # check to see if we already have the file we need
+    def is_cached(self, target, filename_hash):
         if os.path.exists(target):
             md5hash = md5.new()
             with open(target, 'rb') as fh:
@@ -83,6 +91,12 @@ class DownloadThread(threading.Thread):
                     md5hash.update(buf)
             if md5hash.hexdigest() == filename_hash:
                 return True
+        return False
+
+    def download(self, target, filename_hash):
+        connection = self.connectf()
+        if self.is_cached(target, filename_hash):
+            return True
         temp_filename = "%s_download" % target
         filename = os.path.split(target)[-1]
         msg = "Downloading %s" % filename
@@ -93,7 +107,7 @@ class DownloadThread(threading.Thread):
                 md5hash.update(block)
                 fh.write(block)
             cmd = "RETR %s" % filename
-            self.connection.retrbinary(cmd, callback)
+            connection.retrbinary(cmd, callback)
         if filename_hash and md5hash.hexdigest() != filename_hash:
             msg = "%s does not match hash" % filename
             logging.error(msg)
