@@ -209,7 +209,7 @@ class NCBI_BlastMirror(object):
                 msg = "%s failed to uncompress" % target
                 logging.error(msg)
                 continue
-            self.local_hashmap[fn] = self.remote_hashmap[fn]
+            self.local_hashmap[filename] = self.remote_hashmap[filename]
             self.write_local_hashmap(self.local_hashmap)
             os.unlink(target)
 
