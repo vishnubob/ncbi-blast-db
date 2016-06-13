@@ -58,7 +58,7 @@ class ThreadQueue(object):
 
 class DownloadThread(threading.Thread):
     def __init__(self, connectf, inq, outq):
-        self.connectf = connectf()
+        self.connectf = connectf
         self.inq = inq
         self.outq = outq
         super(DownloadThread, self).__init__()
