@@ -7,11 +7,11 @@ import pprint
 import fnmatch
 import subprocess
 import threading
-import md5
+import hashlib
 import logging
 import argparse
 import traceback
-import ConfigParser
+import configparser
 
 logger = logging.basicConfig(level=logging.DEBUG)
 
@@ -88,7 +88,7 @@ class DownloadThread(threading.Thread):
 
     def is_cached(self, target, filename_hash):
         if os.path.exists(target):
-            md5hash = md5.new()
+            md5hash = hashlib.md5()
             with open(target, 'rb') as fh:
                 while 1:
                     buf = fh.read(1024)
@@ -143,14 +143,14 @@ class NCBI_BlastMirror(object):
             os.makedirs(self.blastdb_dir)
         if not os.path.isdir(self.archive_dir):
             os.makedirs(self.archive_dir)
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.add_section("BLAST_MirrorConfig")
         config.set("BLAST_MirrorConfig", "blastdb_dir", self.blastdb_dir)
         config.set("BLAST_MirrorConfig", "archive_dir", self.archive_dir)
         config.set("BLAST_MirrorConfig", "hashfile", self.hashfile)
         config.set("BLAST_MirrorConfig", "include", ["*"])
         config.set("BLAST_MirrorConfig", "exclude", [])
-        with open(self.config_path, 'wb') as configfile:
+        with open(self.config_path, 'w') as configfile:
             config.write(configfile)
         msg = "Initialized configuration file at %s" % self.config_path
         print(msg)
@@ -296,7 +296,7 @@ def get_cli():
     return args
 
 def load_config_path(config_path):
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(config_path)
     conf = dict(config.items("BLAST_MirrorConfig"))
     conf["include"] = eval(conf.get("include", "[*]"))
